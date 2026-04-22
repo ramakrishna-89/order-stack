@@ -373,6 +373,19 @@ services:
     depends_on: [postgres, redis, kafka, otel-collector]
     networks: [stack-net]
 
+# ── Landing page (Traefik default — shown at http://localhost:8888) ───────────
+  landing:
+    image: nginx:alpine
+    container_name: stack-landing
+    restart: unless-stopped
+    labels: { stack: "true" }
+    volumes:
+      - type: bind
+        source: ./config/landing/index.html
+        target: /usr/share/nginx/html/index.html
+        read_only: true
+    networks: [stack-net]
+
 # ── Dashboard (Angular + nginx) ────────────────────────────────────────────────
   dashboard:
     image: ramakrishnastitch/ecom-dashboard:latest
@@ -381,7 +394,7 @@ services:
     restart: unless-stopped
     labels: { stack: "true" }
     ports:
-      - "4200:80"     # direct access without auth
+      - "4200:80"     # direct access — http://localhost:4200
     depends_on: [notification-service, traefik]
     networks: [stack-net]
 

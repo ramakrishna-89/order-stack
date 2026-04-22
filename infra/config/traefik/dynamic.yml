@@ -4,12 +4,11 @@ http:
 
   routers:
 
-    # Dashboard — lowest priority (catches everything not matched above)
-    dashboard:
+    # Landing page — default catch-all, no auth (public entry point)
+    landing:
       entryPoints: [web]
       rule: "PathPrefix(`/`)"
-      middlewares: [dashboard-auth]
-      service: dashboard-svc
+      service: landing-svc
       priority: 1
 
     # Order REST API — rate limited, no auth (used by load tests and CI)
@@ -61,6 +60,22 @@ http:
       service: redis-svc
       priority: 100
 
+    # Angular dashboard — BasicAuth at proxy level
+    # Built with --base-href /dashboard/ so all asset hrefs resolve under /dashboard/
+    dashboard:
+      entryPoints: [web]
+      rule: "PathPrefix(`/dashboard`)"
+      middlewares: [dashboard-auth]
+      service: dashboard-svc
+      priority: 100
+
+    # SSE stream — no auth, proxied through dashboard nginx → notification-service
+    notifications:
+      entryPoints: [web]
+      rule: "PathPrefix(`/notifications`)"
+      service: dashboard-svc
+      priority: 100
+
   # ── Middlewares ───────────────────────────────────────────────────────────────
 
   middlewares:
@@ -80,10 +95,10 @@ http:
 
   services:
 
-    dashboard-svc:
+    landing-svc:
       loadBalancer:
         servers:
-          - url: "http://stack-dashboard:80"
+          - url: "http://stack-landing:80"
 
     order-svc:
       loadBalancer:
@@ -114,3 +129,8 @@ http:
       loadBalancer:
         servers:
           - url: "http://stack-redis-insight:5540"
+
+    dashboard-svc:
+      loadBalancer:
+        servers:
+          - url: "http://stack-dashboard:80"

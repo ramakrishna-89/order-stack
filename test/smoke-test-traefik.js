@@ -27,12 +27,25 @@ const expect401 = { responseCallback: http.expectedStatuses(401) };
 
 export default function () {
 
-  // ── Dashboard auth ───────────────────────────────────────────────────
-  const dashNoAuth = http.get(`${BASE_URL}/`, { ...expect401, tags: { name: 'dashboard-noauth' } });
+  // ── Landing page — public, no auth required ──────────────────────────
+  const landing = http.get(`${BASE_URL}/`);
+  check(landing, {
+    'landing page: 200 (public)':   (r) => r.status === 200,
+    'landing page: correct title':  (r) => r.body && r.body.includes('Order Stack'),
+  });
+
+  // ── Dashboard auth (Angular SPA served at /dashboard/ with BasicAuth) ──
+  const dashNoAuth = http.get(`${BASE_URL}/dashboard/`, { ...expect401, tags: { name: 'dashboard-noauth' } });
   check(dashNoAuth, { 'dashboard: 401 without auth': (r) => r.status === 401 });
 
-  const dashAuthed = http.get(`${BASE_URL}/`, { headers: { Authorization: AUTH } });
-  check(dashAuthed, { 'dashboard: 200 with auth': (r) => r.status === 200 });
+  const dashAuthed = http.get(`${BASE_URL}/dashboard/`, {
+    headers:   { Authorization: AUTH },
+    redirects: 3,
+  });
+  check(dashAuthed, {
+    'dashboard: 200 with auth':    (r) => r.status === 200,
+    'dashboard: Angular app-root': (r) => r.body && r.body.includes('<app-root>'),
+  });
 
   // ── Kafka UI auth ────────────────────────────────────────────────────
   const kafkaNoAuth = http.get(`${BASE_URL}/kafka-ui`, { ...expect401, tags: { name: 'kafka-noauth' } });

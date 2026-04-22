@@ -1,0 +1,310 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Order Stack — Local Dev</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #0d1117;
+      --surface:   #161b22;
+      --border:    #30363d;
+      --text:      #e6edf3;
+      --muted:     #8b949e;
+      --accent:    #3b82f6;
+      --accent-dim:#1d4ed8;
+      --green:     #22c55e;
+      --yellow:    #eab308;
+      --red:       #ef4444;
+      --code-bg:   #21262d;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; color: #60a5fa; }
+
+    /* ── Layout ── */
+    .container { max-width: 1100px; margin: 0 auto; padding: 0 24px; }
+
+    /* ── Header ── */
+    header {
+      border-bottom: 1px solid var(--border);
+      padding: 40px 0 32px;
+    }
+    header .container { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+    .header-left h1 { font-size: 1.75rem; font-weight: 700; letter-spacing: -0.5px; }
+    .header-left p  { color: var(--muted); margin-top: 6px; font-size: 0.95rem; }
+    .badge-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 14px; }
+    .badge {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 3px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 600;
+      border: 1px solid var(--border);
+    }
+    .badge.green  { background: rgba(34,197,94,.1);  border-color: rgba(34,197,94,.3);  color: var(--green); }
+    .badge.blue   { background: rgba(59,130,246,.1); border-color: rgba(59,130,246,.3); color: var(--accent); }
+    .badge.yellow { background: rgba(234,179,8,.1);  border-color: rgba(234,179,8,.3);  color: var(--yellow); }
+    .dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+
+    /* ── Main grid ── */
+    main { padding: 40px 0 60px; display: flex; flex-direction: column; gap: 40px; }
+
+    /* ── Section titles ── */
+    .section-title {
+      font-size: 0.7rem; font-weight: 600; letter-spacing: 1.2px;
+      text-transform: uppercase; color: var(--muted);
+      padding-bottom: 12px; border-bottom: 1px solid var(--border);
+      margin-bottom: 16px;
+    }
+
+    /* ── Service table ── */
+    .service-table { width: 100%; border-collapse: collapse; }
+    .service-table th {
+      text-align: left; font-size: 0.72rem; font-weight: 600;
+      letter-spacing: 0.8px; text-transform: uppercase; color: var(--muted);
+      padding: 6px 12px; border-bottom: 1px solid var(--border);
+    }
+    .service-table td { padding: 10px 12px; border-bottom: 1px solid var(--border); font-size: 0.875rem; vertical-align: middle; }
+    .service-table tr:last-child td { border-bottom: none; }
+    .service-table tr:hover td { background: rgba(255,255,255,.03); }
+    .service-name { font-weight: 600; }
+    .url-link {
+      display: inline-flex; align-items: center; gap: 5px;
+      background: var(--code-bg); border: 1px solid var(--border);
+      border-radius: 6px; padding: 2px 8px; font-family: "SFMono-Regular", Consolas, monospace;
+      font-size: 0.78rem; color: var(--accent);
+    }
+    .url-link:hover { border-color: var(--accent); text-decoration: none; background: rgba(59,130,246,.08); }
+    .tag {
+      display: inline-block; padding: 1px 7px; border-radius: 4px;
+      font-size: 0.7rem; font-weight: 600;
+    }
+    .tag.auth   { background: rgba(234,179,8,.15); color: var(--yellow); }
+    .tag.direct { background: rgba(139,148,158,.1); color: var(--muted); }
+    .tag.open   { background: rgba(34,197,94,.1); color: var(--green); }
+
+    /* ── Two-col layout ── */
+    .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+    @media (max-width: 720px) { .two-col { grid-template-columns: 1fr; } }
+
+    /* ── Card ── */
+    .card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 24px; }
+    .card h3 { font-size: 0.85rem; font-weight: 600; margin-bottom: 14px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.8px; }
+
+    /* ── Code block ── */
+    pre {
+      background: var(--code-bg); border: 1px solid var(--border);
+      border-radius: 8px; padding: 16px; overflow-x: auto;
+      font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+      font-size: 0.8rem; line-height: 1.6; color: #c9d1d9;
+    }
+    .comment { color: #6e7681; }
+    .cmd     { color: #79c0ff; }
+
+    /* ── Tech grid ── */
+    .tech-grid { display: flex; flex-wrap: wrap; gap: 8px; }
+    .tech-pill {
+      padding: 4px 12px; border-radius: 6px; font-size: 0.78rem; font-weight: 500;
+      background: var(--code-bg); border: 1px solid var(--border); color: var(--muted);
+    }
+
+    /* ── Stat row ── */
+    .stat-row { display: flex; gap: 24px; flex-wrap: wrap; }
+    .stat { display: flex; flex-direction: column; }
+    .stat-val { font-size: 1.5rem; font-weight: 700; color: var(--text); }
+    .stat-lbl { font-size: 0.72rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.6px; }
+
+    /* ── Footer ── */
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 20px 0;
+      text-align: center;
+      font-size: 0.78rem;
+      color: var(--muted);
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="container">
+    <div class="header-left">
+      <h1>Order Processing Stack</h1>
+      <p>Microservices demo — 5,000+ orders/min · Transactional Outbox · Real-time SSE · Full observability</p>
+      <div class="badge-row">
+        <span class="badge green"><span class="dot"></span> Stack running</span>
+        <span class="badge blue">Spring Boot · Kafka · PostgreSQL · Redis</span>
+        <span class="badge yellow">Traefik :8888</span>
+      </div>
+    </div>
+  </div>
+</header>
+
+<main class="container">
+
+  <!-- ── Services ── -->
+  <section>
+    <div class="section-title">Services</div>
+    <table class="service-table">
+      <thead>
+        <tr>
+          <th>Service</th>
+          <th>Via Traefik :8888</th>
+          <th>Direct</th>
+          <th>Access</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><span class="service-name">Live Dashboard</span><br><small style="color:var(--muted)">Angular · real-time order stream</small></td>
+          <td>—</td>
+          <td><a class="url-link" href="http://localhost:4200" target="_blank">localhost:4200</a></td>
+          <td><span class="tag open">open</span></td>
+        </tr>
+        <tr>
+          <td><span class="service-name">Order Service API</span><br><small style="color:var(--muted)">POST /orders · GET /orders/{id}</small></td>
+          <td><a class="url-link" href="http://localhost:8888/orders" target="_blank">:8888/orders</a></td>
+          <td><a class="url-link" href="http://localhost:8080/orders" target="_blank">localhost:8080</a></td>
+          <td><span class="tag direct">rate limited</span></td>
+        </tr>
+        <tr>
+          <td><span class="service-name">Grafana</span><br><small style="color:var(--muted)">Metrics · Traces · Logs</small></td>
+          <td><a class="url-link" href="http://localhost:8888/grafana" target="_blank">:8888/grafana</a></td>
+          <td><a class="url-link" href="http://localhost:3010" target="_blank">localhost:3010</a></td>
+          <td><span class="tag open">admin / admin123</span></td>
+        </tr>
+        <tr>
+          <td><span class="service-name">Kafka UI</span><br><small style="color:var(--muted)">Topics · consumer lag · messages</small></td>
+          <td><a class="url-link" href="http://localhost:8888/kafka-ui" target="_blank">:8888/kafka-ui</a></td>
+          <td><a class="url-link" href="http://localhost:8090" target="_blank">localhost:8090</a></td>
+          <td><span class="tag auth">admin / admin@12</span></td>
+        </tr>
+        <tr>
+          <td><span class="service-name">pgAdmin</span><br><small style="color:var(--muted)">PostgreSQL browser</small></td>
+          <td><a class="url-link" href="http://localhost:8888/pgadmin" target="_blank">:8888/pgadmin</a></td>
+          <td><a class="url-link" href="http://localhost:5051" target="_blank">localhost:5051</a></td>
+          <td><span class="tag auth">admin / admin@12</span></td>
+        </tr>
+        <tr>
+          <td><span class="service-name">Prometheus</span><br><small style="color:var(--muted)">Metrics query · targets</small></td>
+          <td><a class="url-link" href="http://localhost:8888/prometheus" target="_blank">:8888/prometheus</a></td>
+          <td><a class="url-link" href="http://localhost:9090/prometheus" target="_blank">localhost:9090</a></td>
+          <td><span class="tag auth">admin / admin@12</span></td>
+        </tr>
+        <tr>
+          <td><span class="service-name">Redis Insight</span><br><small style="color:var(--muted)">Cache browser · key inspector</small></td>
+          <td><a class="url-link" href="http://localhost:8888/redis" target="_blank">:8888/redis</a></td>
+          <td><a class="url-link" href="http://localhost:5541" target="_blank">localhost:5541</a></td>
+          <td><span class="tag auth">admin / admin@12</span></td>
+        </tr>
+        <tr>
+          <td><span class="service-name">Traefik Dashboard</span><br><small style="color:var(--muted)">Router · middleware · service status</small></td>
+          <td>—</td>
+          <td><a class="url-link" href="http://localhost:8889" target="_blank">localhost:8889</a></td>
+          <td><span class="tag open">open</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- ── Stats + Quick Start ── -->
+  <div class="two-col">
+
+    <div>
+      <div class="section-title">Performance targets</div>
+      <div class="card">
+        <div class="stat-row">
+          <div class="stat"><span class="stat-val">5k+</span><span class="stat-lbl">orders / min</span></div>
+          <div class="stat"><span class="stat-val">&lt;5ms</span><span class="stat-lbl">p95 latency</span></div>
+          <div class="stat"><span class="stat-val">0%</span><span class="stat-lbl">error rate</span></div>
+          <div class="stat"><span class="stat-val">250/s</span><span class="stat-lbl">burst ceiling</span></div>
+        </div>
+      </div>
+
+      <div style="margin-top:24px">
+        <div class="section-title">Tech stack</div>
+        <div class="tech-grid">
+          <span class="tech-pill">Spring Boot 3</span>
+          <span class="tech-pill">Kafka 7.7 KRaft</span>
+          <span class="tech-pill">PostgreSQL 16</span>
+          <span class="tech-pill">Redis 7</span>
+          <span class="tech-pill">Angular 17</span>
+          <span class="tech-pill">Traefik v2</span>
+          <span class="tech-pill">Prometheus</span>
+          <span class="tech-pill">Loki</span>
+          <span class="tech-pill">Tempo</span>
+          <span class="tech-pill">OpenTelemetry</span>
+          <span class="tech-pill">Transactional Outbox</span>
+          <span class="tech-pill">SSE</span>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <div class="section-title">Quick start</div>
+      <pre><span class="comment"># 1 — clone and start</span>
+<span class="cmd">git clone</span> &lt;repo-url&gt;
+<span class="cmd">cd</span> order-stack
+<span class="cmd">cp</span> infra/.env.example infra/.env
+<span class="cmd">docker compose</span> -f infra/compose.yml up -d
+
+<span class="comment"># 2 — wait ~30 s for health checks</span>
+
+<span class="comment"># 3 — smoke test (via Traefik)</span>
+<span class="cmd">cd</span> test &amp;&amp; k6 run smoke-test-traefik.js
+
+<span class="comment"># 4 — full load test (~5k orders/min)</span>
+<span class="cmd">cd</span> test &amp;&amp; k6 run order-load-test.js</pre>
+    </div>
+
+  </div>
+
+  <!-- ── Architecture ── -->
+  <section>
+    <div class="section-title">Flow</div>
+    <div class="card">
+      <div style="display:flex; gap:12px; flex-wrap:wrap; align-items:center; font-size:0.85rem; color:var(--muted);">
+        <span style="color:var(--text); font-weight:600;">POST /orders</span>
+        <span>→</span>
+        <span>Traefik <span style="color:var(--muted); font-size:0.75rem">(rate limit · auth)</span></span>
+        <span>→</span>
+        <span>Order Service <span style="color:var(--muted); font-size:0.75rem">(write DB + outbox tx)</span></span>
+        <span>→</span>
+        <span>PostgreSQL outbox</span>
+        <span>→</span>
+        <span>Kafka <code style="font-size:0.75rem; background:var(--code-bg); padding:1px 5px; border-radius:4px;">order-events</code></span>
+        <span>→</span>
+        <span>Notification Service</span>
+        <span>→</span>
+        <span>SSE → Dashboard</span>
+      </div>
+      <div style="margin-top:16px; display:flex; gap:12px; flex-wrap:wrap; align-items:center; font-size:0.85rem; color:var(--muted);">
+        <span style="color:var(--text); font-weight:600;">Idempotency</span>
+        <span>Redis cache</span><span style="font-size:0.75rem">→</span>
+        <span>SELECT before INSERT</span><span style="font-size:0.75rem">→</span>
+        <span>DB unique constraint</span>
+        &nbsp;&nbsp;
+        <span style="color:var(--text); font-weight:600;">Observability</span>
+        <span>Prometheus · Loki · Tempo · Grafana</span>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  <div class="container">
+    Order Processing Stack &mdash; local dev environment &mdash; all services on <strong>localhost</strong>
+  </div>
+</footer>
+
+</body>
+</html>

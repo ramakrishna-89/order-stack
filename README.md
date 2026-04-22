@@ -46,7 +46,8 @@ Wait ~30 seconds for all health checks to pass, then open:
 
 | Service | Traefik URL `:8888` | Direct URL | Credentials |
 |---|---|---|---|
-| **Dashboard** | [http://localhost:8888](http://localhost:8888) | [http://localhost:4200](http://localhost:4200) | Traefik: admin / admin@12 |
+| **Landing page** | [http://localhost:8888](http://localhost:8888) | — | open |
+| **Dashboard** | [http://localhost:8888/dashboard](http://localhost:8888/dashboard) | [http://localhost:4200](http://localhost:4200) | Traefik: admin / admin@12 |
 | **Order Service API** | [http://localhost:8888/orders](http://localhost:8888/orders) | [http://localhost:8080/orders](http://localhost:8080/orders) | rate limited via Traefik |
 | **Grafana** | [http://localhost:8888/grafana](http://localhost:8888/grafana) | [http://localhost:3010](http://localhost:3010) | Grafana: admin / admin123 |
 | **Kafka UI** | [http://localhost:8888/kafka-ui](http://localhost:8888/kafka-ui) | [http://localhost:8090](http://localhost:8090) | Traefik: admin / admin@12 |

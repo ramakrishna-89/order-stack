@@ -4,7 +4,7 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm ci --silent
 COPY . .
-RUN npx ng build --configuration production
+RUN npx ng build --configuration production --base-href /dashboard/
 
 # ── Runtime stage ─────────────────────────────────────────────────────────────
 FROM nginx:alpine
