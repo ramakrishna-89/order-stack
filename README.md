@@ -55,12 +55,12 @@ Wait ~30 seconds for all health checks to pass, then open:
                                   │ GET  /orders/{id}
                                   ▼
                     ┌─────────────────────────┐
-                    │      Order Service       │
-                    │   Spring Boot · 8080     │
-                    │                          │
-                    │  [REST API]  [Outbox      │
-                    │              Poller]      │
-                    └──────┬──────────┬────────┘
+                    │      Order Service      │
+                    │   Spring Boot · 8080    │
+                    │                         │
+                    │  [REST API]  [Outbox    │
+                    │              Poller]    │
+                    └──────┬──────────┬───────┘
                            │          │ polls unpublished
                            │          │ events
                            ▼          ▼
