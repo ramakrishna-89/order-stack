@@ -23,7 +23,7 @@ Two services were required — **Order Service** (REST API + event publishing) a
 
 ```bash
 git clone <repo-url>
-cd ecom
+cd order-stack
 
 cp infra/.env.example infra/.env
 
