@@ -1,0 +1,41 @@
+spring:
+  application:
+    name: notification-service
+
+  # WebFlux uses Netty event loop — no Tomcat, no virtual threads config needed.
+  # Netty runs all connections on ~2x CPU event loop threads regardless of connection count.
+
+  kafka:
+    bootstrap-servers: localhost:9092
+    listener:
+      observation-enabled: true
+      ack-mode: RECORD
+    consumer:
+      group-id: notification-${random.uuid}  # unique per pod — all 6 partitions per pod
+      auto-offset-reset: latest              # new pod reads from NOW, not history
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      enable-auto-commit: false
+
+server:
+  port: 8081
+
+kafka:
+  topic:
+    order-events: order-events
+
+notification:
+  sse:
+    heartbeat-interval-seconds: 30
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,prometheus,info,metrics
+  tracing:
+    sampling:
+      probability: 1.0
+  otlp:
+    tracing:
+      endpoint: http://localhost:4319/v1/traces

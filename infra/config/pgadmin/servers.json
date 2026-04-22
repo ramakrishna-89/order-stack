@@ -1,0 +1,14 @@
+{
+  "Servers": {
+    "1": {
+      "Name": "ecom-postgres",
+      "Group": "Servers",
+      "Host": "postgres",
+      "Port": 5432,
+      "MaintenanceDB": "ecom",
+      "Username": "ecom",
+      "SSLMode": "prefer",
+      "PassFile": "/pgpass"
+    }
+  }
+}

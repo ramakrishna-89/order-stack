@@ -1,0 +1,106 @@
+<!-- ── Connection status bar ───────────────────────────────────────── -->
+<div class="status-bar" [class.connected]="sseService.connected()">
+  <mat-icon>{{ sseService.connected() ? 'wifi' : 'wifi_off' }}</mat-icon>
+  <span>{{ sseService.connected() ? 'Live — receiving order events' : 'Connecting to notification service...' }}</span>
+  <span class="spacer"></span>
+  <span class="event-count">{{ totalReceived() }} events received</span>
+</div>
+
+<!-- ── Stats row ────────────────────────────────────────────────────── -->
+<div class="stats-row">
+
+  <mat-card class="stat-card stat-total">
+    <mat-card-content>
+      <div class="stat-value">{{ totalReceived() }}</div>
+      <div class="stat-label">
+        <mat-icon>receipt_long</mat-icon> Total Events
+      </div>
+    </mat-card-content>
+  </mat-card>
+
+  <mat-card class="stat-card stat-created">
+    <mat-card-content>
+      <div class="stat-value">{{ createdCount() }}</div>
+      <div class="stat-label">
+        <mat-icon>add_circle_outline</mat-icon> Created
+      </div>
+    </mat-card-content>
+  </mat-card>
+
+  <mat-card class="stat-card stat-failed">
+    <mat-card-content>
+      <div class="stat-value">{{ failedCount() }}</div>
+      <div class="stat-label">
+        <mat-icon>error</mat-icon> Failed
+      </div>
+    </mat-card-content>
+  </mat-card>
+
+</div>
+
+<!-- ── Live order feed ───────────────────────────────────────────────── -->
+<mat-card class="feed-card">
+  <mat-card-header>
+    <mat-card-title>
+      <mat-icon>bolt</mat-icon>
+      Live Order Feed
+      <span class="feed-subtitle">
+        showing last {{ orders().length }} of {{ totalReceived() }} events
+      </span>
+    </mat-card-title>
+  </mat-card-header>
+
+  <mat-card-content>
+    <table mat-table [dataSource]="orders()" class="order-table">
+
+      <ng-container matColumnDef="orderId">
+        <th mat-header-cell *matHeaderCellDef>Order ID</th>
+        <td mat-cell *matCellDef="let row">
+          <span class="order-id" [matTooltip]="row.orderId">
+            {{ row.orderId | slice:0:8 }}…
+          </span>
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="status">
+        <th mat-header-cell *matHeaderCellDef>Status</th>
+        <td mat-cell *matCellDef="let row">
+          <span class="status-chip" [ngClass]="chipClass(row.status)">
+            {{ row.status }}
+          </span>
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="amount">
+        <th mat-header-cell *matHeaderCellDef>Amount</th>
+        <td mat-cell *matCellDef="let row">
+          <strong>{{ row.amount | currency:row.currency:'symbol':'1.2-2' }}</strong>
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="currency">
+        <th mat-header-cell *matHeaderCellDef>Currency</th>
+        <td mat-cell *matCellDef="let row">{{ row.currency }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="receivedAt">
+        <th mat-header-cell *matHeaderCellDef>Received</th>
+        <td mat-cell *matCellDef="let row">
+          {{ row.receivedAt | date:'HH:mm:ss.SSS' }}
+        </td>
+      </ng-container>
+
+      <tr mat-header-row *matHeaderRowDef="columns; sticky: true"></tr>
+      <tr mat-row *matRowDef="let row; columns: columns;" class="order-row"></tr>
+
+    </table>
+
+    @if (orders().length === 0) {
+      <div class="empty-state">
+        <mat-icon>inbox</mat-icon>
+        <p>Waiting for order events…</p>
+        <small>Place an order via <code>POST /orders</code> to see it here.</small>
+      </div>
+    }
+  </mat-card-content>
+</mat-card>

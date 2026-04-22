@@ -1,0 +1,27 @@
+# Runtime data (Docker bind-mount volumes)
+infra/containers/postgres/data/
+infra/containers/redis/data/
+infra/containers/grafana/data/
+infra/containers/prometheus/data/
+infra/containers/tempo/data/
+
+# Environment — copy .env.example → .env to get started
+infra/.env
+
+# Maven build artifacts
+**/target/
+
+# Node / Angular
+code/dashboard/node_modules/
+code/dashboard/dist/
+
+# Local dev tooling
+Makefile
+
+# IDE
+.idea/
+*.iml
+.vscode/
+
+# OS
+.DS_Store

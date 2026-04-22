@@ -1,0 +1,123 @@
+/* ── Status bar ─────────────────────────────────────────────────────── */
+.status-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border-radius: 6px;
+  margin-bottom: 20px;
+  background: #ffebee;
+  color: #c62828;
+  font-size: 14px;
+  transition: background 0.4s, color 0.4s;
+
+  mat-icon { font-size: 18px; height: 18px; width: 18px; }
+
+  &.connected { background: #e8f5e9; color: #2e7d32; }
+}
+
+.spacer      { flex: 1 1 auto; }
+.event-count { font-weight: 500; font-size: 13px; }
+
+/* ── Stats row ──────────────────────────────────────────────────────── */
+.stats-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-bottom: 24px;
+
+  @media (max-width: 768px) {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.stat-card {
+  text-align: center;
+  border-radius: 8px !important;
+}
+
+.stat-value {
+  font-size: 42px;
+  font-weight: 300;
+  line-height: 1.2;
+  margin-bottom: 4px;
+}
+
+.stat-label {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  font-size: 13px;
+  color: #666;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+
+  mat-icon { font-size: 16px; height: 16px; width: 16px; }
+}
+
+/* ── Feed card ──────────────────────────────────────────────────────── */
+.feed-card { border-radius: 8px !important; }
+
+mat-card-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 16px !important;
+
+  mat-icon { color: #ff9800; }
+}
+
+.feed-subtitle {
+  font-size: 12px;
+  color: #999;
+  font-weight: 400;
+  margin-left: 4px;
+}
+
+/* ── Table ──────────────────────────────────────────────────────────── */
+.order-table { width: 100%; }
+
+.order-id {
+  font-family: monospace;
+  font-size: 13px;
+  color: #1565c0;
+  cursor: default;
+}
+
+/* Highlight newest row */
+.order-row:first-child { background: #fffde7; }
+
+/* ── Status chips ───────────────────────────────────────────────────── */
+.status-chip {
+  padding: 3px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.3px;
+}
+
+.chip-created    { background: #fff3e0; color: #e65100; }
+.chip-published  { background: #e3f2fd; color: #0d47a1; }
+.chip-failed     { background: #fce4ec; color: #880e4f; }
+
+/* ── Empty state ────────────────────────────────────────────────────── */
+.empty-state {
+  text-align: center;
+  padding: 48px;
+  color: #999;
+
+  mat-icon {
+    font-size: 48px;
+    height: 48px;
+    width: 48px;
+    display: block;
+    margin: 0 auto 16px;
+  }
+
+  code {
+    background: #f5f5f5;
+    padding: 2px 6px;
+    border-radius: 4px;
+  }
+}

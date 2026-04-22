@@ -1,0 +1,98 @@
+spring:
+  application:
+    name: order-service
+
+  # JDK 21 — Project Loom: virtual threads for Tomcat request handling
+  # Each HTTP request runs on a cheap virtual thread instead of a pooled platform thread.
+  # Enables ~millions of concurrent requests without tuning thread pool sizes.
+  threads:
+    virtual:
+      enabled: true
+
+  datasource:
+    url: jdbc:postgresql://localhost:5433/ecom
+    username: ecom
+    password: ecom123
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 2
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+
+  jpa:
+    hibernate:
+      ddl-auto: none
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        default_schema: public
+    open-in-view: false
+
+  data:
+    redis:
+      host: localhost
+      port: 6380
+      timeout: 2000ms
+      lettuce:
+        pool:
+          max-active: 20
+          max-idle: 10
+          min-idle: 2
+
+  kafka:
+    bootstrap-servers: localhost:9092
+    template:
+      observation-enabled: true
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+      acks: all
+      retries: 3
+      properties:
+        enable.idempotence: true
+        max.in.flight.requests.per.connection: 5
+
+server:
+  port: 8080
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,prometheus,info,metrics
+  metrics:
+    distribution:
+      percentiles-histogram:
+        http.server.requests: true
+  tracing:
+    sampling:
+      probability: 1.0
+  otlp:
+    tracing:
+      endpoint: http://localhost:4319/v1/traces
+
+kafka:
+  topic:
+    order-events: order-events
+
+resilience4j:
+  circuitbreaker:
+    instances:
+      kafka-publisher:
+        sliding-window-size: 10
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 10s
+        permitted-number-of-calls-in-half-open-state: 3
+        register-health-indicator: true
+
+outbox:
+  poller:
+    fixed-delay-ms: 1000
+    batch-size: 100
+
+order:
+  cache:
+    ttl-seconds: 30
+  idempotency:
+    ttl-hours: 24
