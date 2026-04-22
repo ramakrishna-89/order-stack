@@ -19,28 +19,40 @@ Two services were required — **Order Service** (REST API + event publishing) a
 
 ## Quick Start
 
-**Prerequisites:** Docker + Docker Compose
+**Prerequisites:** Docker + Docker Compose + (Install [k6](https://grafana.com/docs/k6/latest/set-up/install-k6/) to run the bundled smoke and load tests.)
 
 ```bash
+# Infra
+
+# Git
 git clone <repo-url>
 cd order-stack
 
 cp infra/.env.example infra/.env
 
 docker compose -f infra/compose.yml up -d
+
+# Wait ~30 seconds for all health checks to pass and ensure the infra is up
+
+# Smoke test — 3 iterations via Traefik (auth, order lifecycle, all UI routes)
+cd test && k6 run smoke-test-traefik.js
+
+# Full load test — ~5,000 orders/min sustained + 250 req/sec burst (direct, bypasses rate limit)
+cd test && k6 run order-load-test.js
+
 ```
 
 Wait ~30 seconds for all health checks to pass, then open:
 
 | Service | Traefik URL `:8888` | Direct URL | Credentials |
 |---|---|---|---|
-| **Dashboard** | [http://localhost:8888](http://localhost:8888) | [http://localhost:4200](http://localhost:4200) | admin / admin@12 |
+| **Dashboard** | [http://localhost:8888](http://localhost:8888) | [http://localhost:4200](http://localhost:4200) | Traefik: admin / admin@12 |
 | **Order Service API** | [http://localhost:8888/orders](http://localhost:8888/orders) | [http://localhost:8080/orders](http://localhost:8080/orders) | rate limited via Traefik |
-| **Grafana** | [http://localhost:8888/grafana](http://localhost:8888/grafana) | [http://localhost:3010](http://localhost:3010) | admin / admin123 |
-| **Kafka UI** | [http://localhost:8888/kafka-ui](http://localhost:8888/kafka-ui) | [http://localhost:8090](http://localhost:8090) | — |
-| **pgAdmin** | [http://localhost:8888/pgadmin](http://localhost:8888/pgadmin) | [http://localhost:5051](http://localhost:5051) | admin@ecom.dev / admin123 |
-| **Prometheus** | [http://localhost:8888/prometheus](http://localhost:8888/prometheus) | [http://localhost:9090](http://localhost:9090) | — |
-| **Redis Insight** | [http://localhost:8888/redis](http://localhost:8888/redis) | [http://localhost:5541](http://localhost:5541) | — |
+| **Grafana** | [http://localhost:8888/grafana](http://localhost:8888/grafana) | [http://localhost:3010](http://localhost:3010) | Grafana: admin / admin123 |
+| **Kafka UI** | [http://localhost:8888/kafka-ui](http://localhost:8888/kafka-ui) | [http://localhost:8090](http://localhost:8090) | Traefik: admin / admin@12 |
+| **pgAdmin** | [http://localhost:8888/pgadmin](http://localhost:8888/pgadmin) | [http://localhost:5051](http://localhost:5051) | Traefik: admin / admin@12 · pgAdmin: admin@ecom.dev / admin123 |
+| **Prometheus** | [http://localhost:8888/prometheus](http://localhost:8888/prometheus) | [http://localhost:9090/prometheus](http://localhost:9090/prometheus) | Traefik: admin / admin@12 |
+| **Redis Insight** | [http://localhost:8888/redis](http://localhost:8888/redis) | [http://localhost:5541](http://localhost:5541) | Traefik: admin / admin@12 |
 | **Traefik Dashboard** | — | [http://localhost:8889](http://localhost:8889) | — |
 
 ---

@@ -12,7 +12,7 @@ http:
       service: dashboard-svc
       priority: 1
 
-    # Order REST API — rate limited
+    # Order REST API — rate limited, no auth (used by load tests and CI)
     order-api:
       entryPoints: [web]
       rule: "PathPrefix(`/orders`) || PathPrefix(`/actuator`)"
@@ -20,40 +20,44 @@ http:
       service: order-svc
       priority: 100
 
-    # Grafana — served from /grafana subpath (GF_SERVER_SERVE_FROM_SUB_PATH=true in compose)
+    # Grafana — has its own login, no additional BasicAuth
     grafana:
       entryPoints: [web]
       rule: "PathPrefix(`/grafana`)"
       service: grafana-svc
       priority: 100
 
-    # Kafka UI — served from /kafka-ui subpath (SERVER_SERVLET_CONTEXT_PATH in compose)
+    # Kafka UI — BasicAuth at proxy level
     kafka-ui:
       entryPoints: [web]
       rule: "PathPrefix(`/kafka-ui`)"
+      middlewares: [dashboard-auth]
       service: kafka-ui-svc
       priority: 100
 
-    # pgAdmin — served from /pgadmin subpath (SCRIPT_NAME in compose)
+    # pgAdmin — BasicAuth at proxy level
     pgadmin:
       entryPoints: [web]
       rule: "PathPrefix(`/pgadmin`)"
+      middlewares: [dashboard-auth]
       service: pgadmin-svc
       priority: 100
 
-    # Prometheus — strip prefix, UI links may be relative but API works
+    # Prometheus — BasicAuth at proxy level
+    # No strip-prefix: Prometheus serves under /prometheus via --web.route-prefix
     prometheus:
       entryPoints: [web]
       rule: "PathPrefix(`/prometheus`)"
-      middlewares: [strip-prometheus]
+      middlewares: [dashboard-auth]
       service: prometheus-svc
       priority: 100
 
-    # Redis Insight — strip prefix
+    # Redis Insight — BasicAuth at proxy level
+    # RI_PROXY_PATH=/redis makes it serve all assets under /redis — no prefix stripping needed
     redis-insight:
       entryPoints: [web]
       rule: "PathPrefix(`/redis`)"
-      middlewares: [strip-redis]
+      middlewares: [dashboard-auth]
       service: redis-svc
       priority: 100
 
@@ -61,6 +65,7 @@ http:
 
   middlewares:
 
+    # Shared BasicAuth — admin / admin@12
     dashboard-auth:
       basicAuth:
         users:
@@ -70,14 +75,6 @@ http:
       rateLimit:
         average: 100
         burst: 50
-
-    strip-prometheus:
-      stripPrefix:
-        prefixes: ["/prometheus"]
-
-    strip-redis:
-      stripPrefix:
-        prefixes: ["/redis"]
 
   # ── Services ──────────────────────────────────────────────────────────────────
 

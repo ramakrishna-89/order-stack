@@ -199,6 +199,8 @@ services:
     container_name: stack-redis-insight
     restart: unless-stopped
     labels: { stack: "true" }
+    environment:
+      RI_PROXY_PATH: /redis
     ports:
       - "5541:5540"
     depends_on:
@@ -220,6 +222,8 @@ services:
       - --storage.tsdb.retention.size=2GB
       - --web.enable-remote-write-receiver
       - --enable-feature=exemplar-storage
+      - --web.external-url=http://localhost:8888/prometheus
+      - --web.route-prefix=/prometheus
     ports:
       - "9090:9090"
     volumes:
