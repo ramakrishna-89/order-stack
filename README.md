@@ -91,15 +91,15 @@ Wait ~30 seconds for all health checks to pass, then open:
 
 ### Live order stream (SSE → Dashboard)
 
-<video src="test/video/dashboard.mp4" controls width="100%"></video>
+[▶ Watch demo](test/video/dashboard.mp4)
 
 ### Grafana — orders/sec + p95 latency & Tempo end-to-end trace (HTTP → Kafka → SSE)
 
-<video src="test/video/grafana.mp4" controls width="100%"></video>
+[▶ Watch demo](test/video/grafana.mp4)
 
 ### Loki — log analysis
 
-<video src="test/video/logs.mp4" controls width="100%"></video>
+[▶ Watch demo](test/video/logs.mp4)
 
 ---
 
