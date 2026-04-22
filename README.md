@@ -89,17 +89,18 @@ Wait ~30 seconds for all health checks to pass, then open:
 
 ## Demo
 
-### Live order stream (SSE → Dashboard)
-
-<video src="https://github.com/user-attachments/assets/22b90094-cb40-45f7-88b9-074fd064ac9e" controls width="100%"></video>
-
-### Grafana — orders/sec + p95 latency & Tempo end-to-end trace (HTTP → Kafka → SSE)
-
-<video src="https://github.com/user-attachments/assets/f93c5333-c80b-4ffc-b6e8-09e95b4c8c07" controls width="100%"></video>
-
-### Loki — log analysis
-
-<video src="https://github.com/user-attachments/assets/025ce11a-3892-434e-8f95-3b1dceddfc4e" controls width="100%"></video>
+<table>
+  <tr>
+    <th>Live order stream (SSE → Dashboard)</th>
+    <th>Grafana — metrics &amp; Tempo trace</th>
+    <th>Loki — log analysis</th>
+  </tr>
+  <tr>
+    <td><video src="https://github.com/user-attachments/assets/22b90094-cb40-45f7-88b9-074fd064ac9e" controls width="100%"></video></td>
+    <td><video src="https://github.com/user-attachments/assets/f93c5333-c80b-4ffc-b6e8-09e95b4c8c07" controls width="100%"></video></td>
+    <td><video src="https://github.com/user-attachments/assets/025ce11a-3892-434e-8f95-3b1dceddfc4e" controls width="100%"></video></td>
+  </tr>
+</table>
 
 ---
 
