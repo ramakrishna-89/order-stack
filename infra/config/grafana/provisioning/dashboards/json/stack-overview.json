@@ -1,6 +1,6 @@
 {
-  "title": "Ecom Overview",
-  "uid": "ecom-overview",
+  "title": "Stack Overview",
+  "uid": "stack-overview",
   "timezone": "browser",
   "schemaVersion": 38,
   "refresh": "5s",
@@ -55,23 +55,39 @@
     },
     {
       "type": "timeseries",
-      "title": "Orders / sec (live)",
+      "title": "Orders / sec (service)",
       "gridPos": { "x": 0, "y": 4, "w": 12, "h": 8 },
-      "targets": [{
-        "datasource": { "uid": "prometheus" },
-        "expr": "sum(rate(http_server_requests_seconds_count{uri=\"/orders\",method=\"POST\",status=~\"2..\"}[30s]))",
-        "legendFormat": "success"
-      },{
-        "datasource": { "uid": "prometheus" },
-        "expr": "sum(rate(http_server_requests_seconds_count{uri=\"/orders\",method=\"POST\",status=~\"4..|5..\"}[30s]))",
-        "legendFormat": "errors"
-      }],
+      "targets": [
+        {
+          "datasource": { "uid": "prometheus" },
+          "expr": "sum(rate(http_server_requests_seconds_count{uri=\"/orders\",method=\"POST\",status=~\"2..\"}[30s]))",
+          "legendFormat": "success"
+        },
+        {
+          "datasource": { "uid": "prometheus" },
+          "expr": "sum(rate(http_server_requests_seconds_count{uri=\"/orders\",method=\"POST\",status=~\"4..|5..\"}[30s]))",
+          "legendFormat": "errors"
+        }
+      ],
+      "fieldConfig": { "defaults": { "unit": "reqps" } }
+    },
+    {
+      "type": "timeseries",
+      "title": "Traefik — req/sec by router",
+      "gridPos": { "x": 12, "y": 4, "w": 12, "h": 8 },
+      "targets": [
+        {
+          "datasource": { "uid": "prometheus" },
+          "expr": "sum by (router) (rate(traefik_router_requests_total{router=~\".+@file\"}[30s]))",
+          "legendFormat": "{{router}}"
+        }
+      ],
       "fieldConfig": { "defaults": { "unit": "reqps" } }
     },
     {
       "type": "timeseries",
       "title": "Kafka Consumer Lag (live)",
-      "gridPos": { "x": 12, "y": 4, "w": 12, "h": 8 },
+      "gridPos": { "x": 0, "y": 12, "w": 24, "h": 8 },
       "targets": [{
         "datasource": { "uid": "prometheus" },
         "expr": "sum(kafka_consumergroup_lag * on(consumergroup) group_left() (kafka_consumergroup_members > 0)) by (consumergroup)",
@@ -82,7 +98,7 @@
     {
       "type": "logs",
       "title": "Service Logs (live)",
-      "gridPos": { "x": 0, "y": 12, "w": 24, "h": 8 },
+      "gridPos": { "x": 0, "y": 20, "w": 24, "h": 8 },
       "targets": [{
         "datasource": { "uid": "loki" },
         "expr": "{service=~\"order-service|notification-service\"}",

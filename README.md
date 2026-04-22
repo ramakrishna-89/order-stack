@@ -32,57 +32,67 @@ docker compose -f infra/compose.yml up -d
 
 Wait ~30 seconds for all health checks to pass, then open:
 
-| Service | URL | Credentials |
-|---|---|---|
-| **Dashboard** | http://localhost:4200 | — |
-| **Order Service API** | http://localhost:8080 | — |
-| **Notification Service** | http://localhost:8081 | — |
-| **Grafana** | http://localhost:3010 | admin / admin123 |
-| **Kafka UI** | http://localhost:8090 | — |
-| **pgAdmin** | http://localhost:5051 | admin@ecom.dev / admin123 |
-| **Redis Insight** | http://localhost:5541 | — |
-| **Prometheus** | http://localhost:9090 | — |
+| Service | Traefik URL `:8888` | Direct URL | Credentials |
+|---|---|---|---|
+| **Dashboard** | [http://localhost:8888](http://localhost:8888) | [http://localhost:4200](http://localhost:4200) | admin / admin@12 |
+| **Order Service API** | [http://localhost:8888/orders](http://localhost:8888/orders) | [http://localhost:8080/orders](http://localhost:8080/orders) | rate limited via Traefik |
+| **Grafana** | [http://localhost:8888/grafana](http://localhost:8888/grafana) | [http://localhost:3010](http://localhost:3010) | admin / admin123 |
+| **Kafka UI** | [http://localhost:8888/kafka-ui](http://localhost:8888/kafka-ui) | [http://localhost:8090](http://localhost:8090) | — |
+| **pgAdmin** | [http://localhost:8888/pgadmin](http://localhost:8888/pgadmin) | [http://localhost:5051](http://localhost:5051) | admin@ecom.dev / admin123 |
+| **Prometheus** | [http://localhost:8888/prometheus](http://localhost:8888/prometheus) | [http://localhost:9090](http://localhost:9090) | — |
+| **Redis Insight** | [http://localhost:8888/redis](http://localhost:8888/redis) | [http://localhost:5541](http://localhost:5541) | — |
+| **Traefik Dashboard** | — | [http://localhost:8889](http://localhost:8889) | — |
 
 ---
 
 ## Architecture
 
 ```
-                         ┌──────────────────┐
-                         │   Client / k6    │
-                         └────────┬─────────┘
-                                  │ POST /orders
-                                  │ GET  /orders/{id}
-                                  ▼
-                    ┌─────────────────────────┐
-                    │      Order Service      │
-                    │   Spring Boot · 8080    │
-                    │                         │
-                    │  [REST API]  [Outbox    │
-                    │              Poller]    │
-                    └──────┬──────────┬───────┘
-                           │          │ polls unpublished
-                           │          │ events
-                           ▼          ▼
-               ┌──────────────┐  ┌──────────────────┐
-               │  PostgreSQL  │  │      Kafka        │
-               │  orders      │  │  order-events     │
-               │  outbox      │  │  (6 partitions)   │
-               └──────────────┘  └────────┬──────────┘
-                                          │ consume
-               ┌──────────────┐           ▼
-               │    Redis     │  ┌──────────────────┐
-               │  idem cache  │  │ Notification Svc │
-               │  order cache │  │ Spring Boot·8081 │
-               └──────────────┘  └────────┬─────────┘
-                                          │ SSE
-                                          ▼
-                                 ┌──────────────────┐
-                                 │    Dashboard      │
-                                 │  Angular · 4200   │
-                                 └──────────────────┘
+         Browser                          k6 load test
+            │                                 │
+            │  :8888 (protected)              │  :8080 (direct — bypasses Traefik)
+            ▼                                 │
+  ┌─────────────────────────┐                 │
+  │      Traefik  :8888     │                 │
+  │  ┌───────────────────┐  │                 │
+  │  │ BasicAuth         │  │                 │
+  │  │ Rate limit 100/s  │  │                 │
+  │  │ File-based routing│  │                 │
+  │  └───────────────────┘  │                 │
+  └────────────┬────────────┘                 │
+               │                              │
+               └──────────────┬───────────────┘
+                              │ POST /orders
+                              │ GET  /orders/{id}
+                              ▼
+                  ┌─────────────────────────-┐
+                  │      Order Service       │
+                  │   Spring Boot · 8080     │
+                  │  [REST API]  [Outbox     │
+                  │              Poller]     │
+                  └──────┬──────────┬────────┘
+                         │          │ polls unpublished events
+                         ▼          ▼
+             ┌──────────────┐  ┌───────────────────┐
+             │  PostgreSQL  │  │      Kafka        │
+             │  orders      │  │  order-events     │
+             │  outbox      │  │  (6 partitions)   │
+             └──────────────┘  └────────┬──────────┘
+                                        │ consume
+             ┌──────────────┐           ▼
+             │    Redis     │  ┌──────────────────┐
+             │  idem cache  │  │ Notification Svc │
+             │  order cache │  │ Spring Boot·8081 │
+             └──────────────┘  └────────┬─────────┘
+                                        │ SSE
+                                        ▼
+                               ┌──────────────────┐
+                               │    Dashboard     │
+                               │  Angular · 4200  │
+                               └──────────────────┘
 
-  Observability: Prometheus · Loki · Tempo · Grafana (port 3010)
+  Observability : Prometheus · Loki · Tempo · Grafana (:3010)
+  All UIs via Traefik: /grafana · /kafka-ui · /pgadmin · /prometheus · /redis
 ```
 
 ---
@@ -130,8 +140,18 @@ Redis is configured with `maxmemory-policy volatile-lru`. Only keys with a TTL (
 
 ### Observability
 - **Metrics** — Spring Boot Actuator → Prometheus (scraped every 5s). Grafana dashboard shows orders/sec, p95 latency, error rate, Kafka consumer lag.
-- **Logs** — Structured JSON via Logback → Promtail → Loki. All containers labelled `ecom=true` are auto-tailed. Loki → Tempo trace linking enabled via `traceId` field.
-- **Traces** — OpenTelemetry Java agent → OTel Collector → Tempo. Full span from HTTP request through Kafka publish visible in Grafana.
+- **Logs** — Structured JSON via Logback → Promtail → Loki. All containers labelled `stack=true` are auto-tailed. Loki → Tempo trace linking enabled via `traceId` field.
+- **Traces** — OTel SDK → OTel Collector → Tempo. Full span from HTTP request through Kafka publish and SSE dispatch visible as a single trace in Grafana.
+
+### Security — Traefik reverse proxy
+
+All public-facing traffic enters through **Traefik on port `8888`**. Services do not implement authentication themselves — the proxy enforces it at the edge.
+
+**What is in place:**
+- **BasicAuth on the dashboard** — browser login prompt before the Angular app is served; credentials never reach the application layer
+- **Rate limiting on the Order API** — token bucket at 100 req/s average, burst 50; returns `429 Too Many Requests` when exceeded, protecting the database from uncontrolled write spikes
+- **Single entry point** — all admin UIs (Grafana, Kafka UI, pgAdmin, Prometheus, Redis Insight) routed through one port; direct container ports remain open as a fallback
+- **Config-file routing** — all rules live in `infra/config/traefik/dynamic.yml` with zero labels on services; routes reload without restarting Traefik
 
 ### Performance tuning
 Key settings applied to sustain 250 req/sec burst:
@@ -195,15 +215,18 @@ Three phases:
 
 Includes a 5% duplicate request rate to exercise idempotency under load.
 
+> **Why direct port `:8080`?** The load test targets the Order Service directly, bypassing Traefik's 100 req/s rate limit. This tests raw service throughput — the limit exists to protect production traffic, not benchmark capacity. The Traefik gateway and rate limiting are verified separately.
+
 ```bash
 cd test
 k6 run order-load-test.js
+# default BASE_URL=http://localhost:8080 — direct, no rate limiting
 ```
 
 **What to watch while the test runs:**
-- **Grafana → Ecom Overview** (http://localhost:3010) — orders/sec, p95 latency, Kafka consumer lag
+- **Grafana → Stack Overview** (http://localhost:3010/grafana) — orders/sec, p95 latency, Kafka consumer lag
 - **Dashboard** (http://localhost:4200) — live order stream with CREATED / FAILED counts
-- **Kafka UI** (http://localhost:8090) — consumer lag per partition
+- **Kafka UI** (http://localhost:8090/kafka-ui) — consumer lag per partition
 
 **Expected results:**
 

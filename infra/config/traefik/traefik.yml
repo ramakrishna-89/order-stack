@@ -1,0 +1,27 @@
+api:
+  dashboard: true
+  insecure: true
+
+log:
+  level: INFO
+
+entryPoints:
+  web:
+    address: ":8888"
+
+metrics:
+  prometheus:
+    addEntryPointsLabels: true
+    addRoutersLabels: true
+    addServicesLabels: true
+
+providers:
+  # Docker provider — discovers containers but no labels needed (all routes in dynamic.yml)
+  docker:
+    endpoint: "unix:///var/run/docker.sock"
+    exposedByDefault: false
+    network: stack-net
+  # File provider — single source of truth for all routing rules
+  file:
+    filename: /etc/traefik/dynamic.yml
+    watch: true   # reloads on file change — no restart needed

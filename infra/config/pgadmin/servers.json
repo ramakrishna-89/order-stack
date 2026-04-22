@@ -1,7 +1,7 @@
 {
   "Servers": {
     "1": {
-      "Name": "ecom-postgres",
+      "Name": "stack-postgres",
       "Group": "Servers",
       "Host": "postgres",
       "Port": 5432,

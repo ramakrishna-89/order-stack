@@ -1,16 +1,16 @@
-name: ecom-stack
+name: order-stack
 
 networks:
-  ecom-net:
+  stack-net:
     driver: bridge
 
 # ── Postgres ───────────────────────────────────────────────────────────────────
 services:
   postgres:
     image: postgres:16-alpine
-    container_name: ecom-postgres
+    container_name: stack-postgres
     restart: unless-stopped
-    labels: { ecom: "true" }
+    labels: { stack: "true" }
     environment:
       POSTGRES_DB:       ${POSTGRES_DB}
       POSTGRES_USER:     ${POSTGRES_USER}
@@ -51,18 +51,19 @@ services:
       interval: 5s
       timeout: 5s
       retries: 10
-    networks: [ecom-net]
+    networks: [stack-net]
 
   # ── pgAdmin (Postgres UI) ───────────────────────────────────────────────────
   pgadmin:
     image: dpage/pgadmin4:latest
-    container_name: ecom-pgadmin
+    container_name: stack-pgadmin
     restart: unless-stopped
-    labels: { ecom: "true" }
+    labels: { stack: "true" }
     environment:
-      PGADMIN_DEFAULT_EMAIL:    ${PGADMIN_DEFAULT_EMAIL}
-      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD}
+      PGADMIN_DEFAULT_EMAIL:      ${PGADMIN_DEFAULT_EMAIL}
+      PGADMIN_DEFAULT_PASSWORD:   ${PGADMIN_DEFAULT_PASSWORD}
       PGADMIN_CONFIG_SERVER_MODE: "False"
+      SCRIPT_NAME:                "/pgadmin"
     ports:
       - "5051:80"
     volumes:
@@ -73,14 +74,14 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-    networks: [ecom-net]
+    networks: [stack-net]
 
 # ── Kafka (KRaft — no Zookeeper) ───────────────────────────────────────────────
   kafka:
     image: confluentinc/cp-kafka:7.7.1
-    container_name: ecom-kafka
+    container_name: stack-kafka
     restart: unless-stopped
-    labels: { ecom: "true" }
+    labels: { stack: "true" }
     environment:
       KAFKA_NODE_ID: 1
       KAFKA_PROCESS_ROLES: broker,controller
@@ -113,13 +114,13 @@ services:
       timeout: 10s
       retries: 10
       start_period: 30s
-    networks: [ecom-net]
+    networks: [stack-net]
 
   # ── Kafka topic init ────────────────────────────────────────────────────────
   kafka-init:
     image: confluentinc/cp-kafka:7.7.1
-    container_name: ecom-kafka-init
-    labels: { ecom: "true" }
+    container_name: stack-kafka-init
+    labels: { stack: "true" }
     depends_on:
       kafka:
         condition: service_healthy
@@ -130,46 +131,47 @@ services:
         kafka-topics --bootstrap-server kafka:29092 --create --if-not-exists --topic order-events.DLT --partitions 1 --replication-factor 1
         echo "Topics ready:"
         kafka-topics --bootstrap-server kafka:29092 --list
-    networks: [ecom-net]
+    networks: [stack-net]
     restart: "no"
 
   # ── Kafka UI ────────────────────────────────────────────────────────────────
   kafka-ui:
     image: provectuslabs/kafka-ui:latest
-    container_name: ecom-kafka-ui
+    container_name: stack-kafka-ui
     restart: unless-stopped
-    labels: { ecom: "true" }
+    labels: { stack: "true" }
     environment:
       KAFKA_CLUSTERS_0_NAME:             ecom-cluster
       KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:29092
       DYNAMIC_CONFIG_ENABLED: "true"
+      SERVER_SERVLET_CONTEXT_PATH:       "/kafka-ui"
     ports:
       - "8090:8080"
     depends_on:
       kafka:
         condition: service_healthy
-    networks: [ecom-net]
+    networks: [stack-net]
 
   # ── Kafka Exporter ────────────────────────────────────────────────────────────
   kafka-exporter:
     image: danielqsj/kafka-exporter:latest
-    container_name: ecom-kafka-exporter
+    container_name: stack-kafka-exporter
     restart: unless-stopped
-    labels: { ecom: "true" }
+    labels: { stack: "true" }
     command: ["--kafka.server=kafka:29092"]
     ports:
       - "9308:9308"
     depends_on:
       kafka:
         condition: service_healthy
-    networks: [ecom-net]
+    networks: [stack-net]
 
 # ── Redis ──────────────────────────────────────────────────────────────────────
   redis:
     image: redis:7-alpine
-    container_name: ecom-redis
+    container_name: stack-redis
     restart: unless-stopped
-    labels: { ecom: "true" }
+    labels: { stack: "true" }
     command: >
       redis-server
       --loglevel warning
@@ -189,28 +191,28 @@ services:
       interval: 5s
       timeout: 3s
       retries: 5
-    networks: [ecom-net]
+    networks: [stack-net]
 
   # ── Redis Insight (Redis UI) ────────────────────────────────────────────────
   redis-insight:
     image: redis/redisinsight:latest
-    container_name: ecom-redis-insight
+    container_name: stack-redis-insight
     restart: unless-stopped
-    labels: { ecom: "true" }
+    labels: { stack: "true" }
     ports:
       - "5541:5540"
     depends_on:
       redis:
         condition: service_healthy
-    networks: [ecom-net]
+    networks: [stack-net]
 
 # ── Observability stack ────────────────────────────────────────────────────────
 
   prometheus:
     image: prom/prometheus:latest
-    container_name: ecom-prometheus
+    container_name: stack-prometheus
     restart: unless-stopped
-    labels: { ecom: "true" }
+    labels: { stack: "true" }
     command:
       - --config.file=/etc/prometheus/prometheus.yml
       - --storage.tsdb.path=/prometheus
@@ -230,13 +232,13 @@ services:
         target: /prometheus
     extra_hosts:
       - "host.docker.internal:host-gateway"
-    networks: [ecom-net]
+    networks: [stack-net]
 
   loki:
     image: grafana/loki:latest
-    container_name: ecom-loki
+    container_name: stack-loki
     restart: unless-stopped
-    labels: { ecom: "true" }
+    labels: { stack: "true" }
     command: -config.file=/etc/loki/loki-config.yml
     ports:
       - "3100:3100"
@@ -245,13 +247,13 @@ services:
         source: ./config/loki/loki-config.yml
         target: /etc/loki/loki-config.yml
         read_only: true
-    networks: [ecom-net]
+    networks: [stack-net]
 
   promtail:
     image: grafana/promtail:latest
-    container_name: ecom-promtail
+    container_name: stack-promtail
     restart: unless-stopped
-    labels: { ecom: "true" }
+    labels: { stack: "true" }
     command: -config.file=/etc/promtail/promtail-config.yml
     volumes:
       - type: bind
@@ -260,13 +262,13 @@ services:
         read_only: true
       - /var/run/docker.sock:/var/run/docker.sock:ro
     depends_on: [loki]
-    networks: [ecom-net]
+    networks: [stack-net]
 
   tempo:
     image: grafana/tempo:latest
-    container_name: ecom-tempo
+    container_name: stack-tempo
     restart: unless-stopped
-    labels: { ecom: "true" }
+    labels: { stack: "true" }
     command: >
       -config.file=/etc/tempo/tempo-config.yml
       -config.enable-legacy-overrides
@@ -283,13 +285,13 @@ services:
       - type: bind
         source: ./containers/tempo/data
         target: /tmp/tempo
-    networks: [ecom-net]
+    networks: [stack-net]
 
   otel-collector:
     image: otel/opentelemetry-collector-contrib:latest
-    container_name: ecom-otel-collector
+    container_name: stack-otel-collector
     restart: unless-stopped
-    labels: { ecom: "true" }
+    labels: { stack: "true" }
     command: --config=/etc/otel/otel-config.yml
     ports:
       - "4319:4317"
@@ -300,15 +302,38 @@ services:
         target: /etc/otel/otel-config.yml
         read_only: true
     depends_on: [tempo]
-    networks: [ecom-net]
+    networks: [stack-net]
+
+# ── Traefik (reverse proxy + rate limiting + BasicAuth) ───────────────────────
+  traefik:
+    image: traefik:v2.11
+    container_name: stack-traefik
+    restart: unless-stopped
+    labels: { stack: "true" }
+    command:
+      - --configFile=/etc/traefik/traefik.yml
+    ports:
+      - "8888:8888"   # main entry point — http://localhost:8888
+      - "8889:8080"   # Traefik dashboard UI
+    volumes:
+      - ${DOCKER_SOCK:-/var/run/docker.sock}:/var/run/docker.sock:ro
+      - type: bind
+        source: ./config/traefik/traefik.yml
+        target: /etc/traefik/traefik.yml
+        read_only: true
+      - type: bind
+        source: ./config/traefik/dynamic.yml
+        target: /etc/traefik/dynamic.yml
+        read_only: true
+    networks: [stack-net]
 
 # ── Notification Service ───────────────────────────────────────────────────────
   notification-service:
     image: ramakrishnastitch/ecom-notification-service:latest
     # build: { context: ../../code/notification-service, dockerfile: Dockerfile }
-    container_name: ecom-notification-service
+    container_name: stack-notification-service
     restart: unless-stopped
-    labels: { ecom: "true" }
+    labels: { stack: "true" }
     environment:
       SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
       MANAGEMENT_OTLP_TRACING_ENDPOINT: http://otel-collector:4318/v1/traces
@@ -320,15 +345,15 @@ services:
       otel-collector:
         condition: service_started
     command: ["sh", "-c", "sleep 5 && java -jar /app/app.jar"]
-    networks: [ecom-net]
+    networks: [stack-net]
 
 # ── Order Service ──────────────────────────────────────────────────────────────
   order-service:
     image: ramakrishnastitch/ecom-order-service:latest
     # build: { context: ../../code/order-service, dockerfile: Dockerfile }
-    container_name: ecom-order-service
+    container_name: stack-order-service
     restart: unless-stopped
-    labels: { ecom: "true" }
+    labels: { stack: "true" }
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/ecom
       SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
@@ -340,31 +365,33 @@ services:
       OUTBOX_POLLER_BATCH_SIZE: 500
       MANAGEMENT_OTLP_TRACING_ENDPOINT: http://otel-collector:4318/v1/traces
     ports:
-      - "8080:8080"
+      - "8080:8080"   # direct access — used by k6 load tests
     depends_on: [postgres, redis, kafka, otel-collector]
-    networks: [ecom-net]
+    networks: [stack-net]
 
 # ── Dashboard (Angular + nginx) ────────────────────────────────────────────────
   dashboard:
     image: ramakrishnastitch/ecom-dashboard:latest
     # build: { context: ../../code/dashboard, dockerfile: Dockerfile }
-    container_name: ecom-dashboard
+    container_name: stack-dashboard
     restart: unless-stopped
-    labels: { ecom: "true" }
+    labels: { stack: "true" }
     ports:
-      - "4200:80"
-    depends_on: [notification-service]
-    networks: [ecom-net]
+      - "4200:80"     # direct access without auth
+    depends_on: [notification-service, traefik]
+    networks: [stack-net]
 
   grafana:
     image: grafana/grafana-oss:latest
-    container_name: ecom-grafana
+    container_name: stack-grafana
     restart: unless-stopped
-    labels: { ecom: "true" }
+    labels: { stack: "true" }
     environment:
-      GF_SECURITY_ADMIN_USER:     ${GF_SECURITY_ADMIN_USER}
-      GF_SECURITY_ADMIN_PASSWORD: ${GF_SECURITY_ADMIN_PASSWORD}
-      GF_FEATURE_TOGGLES_ENABLE:  traceqlEditor
+      GF_SECURITY_ADMIN_USER:       ${GF_SECURITY_ADMIN_USER}
+      GF_SECURITY_ADMIN_PASSWORD:   ${GF_SECURITY_ADMIN_PASSWORD}
+      GF_FEATURE_TOGGLES_ENABLE:    traceqlEditor
+      GF_SERVER_ROOT_URL:           http://localhost:8888/grafana
+      GF_SERVER_SERVE_FROM_SUB_PATH: "true"
     ports:
       - "3010:3000"
     volumes:
@@ -376,4 +403,4 @@ services:
         source: ./containers/grafana/data
         target: /var/lib/grafana
     depends_on: [prometheus, loki, tempo]
-    networks: [ecom-net]
+    networks: [stack-net]

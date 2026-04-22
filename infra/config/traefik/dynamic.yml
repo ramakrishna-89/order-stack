@@ -1,0 +1,119 @@
+http:
+
+  # ── Routers ───────────────────────────────────────────────────────────────────
+
+  routers:
+
+    # Dashboard — lowest priority (catches everything not matched above)
+    dashboard:
+      entryPoints: [web]
+      rule: "PathPrefix(`/`)"
+      middlewares: [dashboard-auth]
+      service: dashboard-svc
+      priority: 1
+
+    # Order REST API — rate limited
+    order-api:
+      entryPoints: [web]
+      rule: "PathPrefix(`/orders`) || PathPrefix(`/actuator`)"
+      middlewares: [order-ratelimit]
+      service: order-svc
+      priority: 100
+
+    # Grafana — served from /grafana subpath (GF_SERVER_SERVE_FROM_SUB_PATH=true in compose)
+    grafana:
+      entryPoints: [web]
+      rule: "PathPrefix(`/grafana`)"
+      service: grafana-svc
+      priority: 100
+
+    # Kafka UI — served from /kafka-ui subpath (SERVER_SERVLET_CONTEXT_PATH in compose)
+    kafka-ui:
+      entryPoints: [web]
+      rule: "PathPrefix(`/kafka-ui`)"
+      service: kafka-ui-svc
+      priority: 100
+
+    # pgAdmin — served from /pgadmin subpath (SCRIPT_NAME in compose)
+    pgadmin:
+      entryPoints: [web]
+      rule: "PathPrefix(`/pgadmin`)"
+      service: pgadmin-svc
+      priority: 100
+
+    # Prometheus — strip prefix, UI links may be relative but API works
+    prometheus:
+      entryPoints: [web]
+      rule: "PathPrefix(`/prometheus`)"
+      middlewares: [strip-prometheus]
+      service: prometheus-svc
+      priority: 100
+
+    # Redis Insight — strip prefix
+    redis-insight:
+      entryPoints: [web]
+      rule: "PathPrefix(`/redis`)"
+      middlewares: [strip-redis]
+      service: redis-svc
+      priority: 100
+
+  # ── Middlewares ───────────────────────────────────────────────────────────────
+
+  middlewares:
+
+    dashboard-auth:
+      basicAuth:
+        users:
+          - "admin:$2y$05$cYrFgnLadTntXe83KFFIBuHJJS711crBE7D.5NxzkZufbgqr..X.u"
+
+    order-ratelimit:
+      rateLimit:
+        average: 100
+        burst: 50
+
+    strip-prometheus:
+      stripPrefix:
+        prefixes: ["/prometheus"]
+
+    strip-redis:
+      stripPrefix:
+        prefixes: ["/redis"]
+
+  # ── Services ──────────────────────────────────────────────────────────────────
+
+  services:
+
+    dashboard-svc:
+      loadBalancer:
+        servers:
+          - url: "http://stack-dashboard:80"
+
+    order-svc:
+      loadBalancer:
+        servers:
+          - url: "http://stack-order-service:8080"
+
+    grafana-svc:
+      loadBalancer:
+        servers:
+          - url: "http://stack-grafana:3000"
+
+    kafka-ui-svc:
+      loadBalancer:
+        servers:
+          - url: "http://stack-kafka-ui:8080"
+
+    pgadmin-svc:
+      loadBalancer:
+        servers:
+          - url: "http://stack-pgadmin:80"
+
+    prometheus-svc:
+      loadBalancer:
+        servers:
+          - url: "http://stack-prometheus:9090"
+
+    redis-svc:
+      loadBalancer:
+        servers:
+          - url: "http://stack-redis-insight:5540"
