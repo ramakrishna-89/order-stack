@@ -15,7 +15,7 @@
         "legendFormat": "orders/sec"
       }],
       "options": { "colorMode": "background", "graphMode": "area" },
-      "fieldConfig": { "defaults": { "unit": "reqps", "color": { "mode": "thresholds" }, "thresholds": { "steps": [{"color":"green","value":0},{"color":"yellow","value":50},{"color":"red","value":100}] } } }
+      "fieldConfig": { "defaults": { "unit": "reqps", "noValue": "0", "color": { "mode": "thresholds" }, "thresholds": { "steps": [{"color":"green","value":0},{"color":"yellow","value":50},{"color":"red","value":100}] } } }
     },
     {
       "type": "stat",
@@ -27,7 +27,7 @@
         "legendFormat": "p95"
       }],
       "options": { "colorMode": "background" },
-      "fieldConfig": { "defaults": { "unit": "s", "color": { "mode": "thresholds" }, "thresholds": { "steps": [{"color":"green","value":0},{"color":"yellow","value":0.5},{"color":"red","value":1}] } } }
+      "fieldConfig": { "defaults": { "unit": "s", "noValue": "0", "color": { "mode": "thresholds" }, "thresholds": { "steps": [{"color":"green","value":0},{"color":"yellow","value":0.5},{"color":"red","value":1}] } } }
     },
     {
       "type": "stat",
@@ -35,11 +35,11 @@
       "gridPos": { "x": 12, "y": 0, "w": 6, "h": 4 },
       "targets": [{
         "datasource": { "uid": "prometheus" },
-        "expr": "sum(rate(http_server_requests_seconds_count{status=~\"5..\"}[1m])) / sum(rate(http_server_requests_seconds_count[1m])) * 100",
+        "expr": "(sum(rate(http_server_requests_seconds_count{status=~\"5..\"}[1m])) or vector(0)) / sum(rate(http_server_requests_seconds_count[1m])) * 100",
         "legendFormat": "error %"
       }],
       "options": { "colorMode": "background" },
-      "fieldConfig": { "defaults": { "unit": "percent", "color": { "mode": "thresholds" }, "thresholds": { "steps": [{"color":"green","value":0},{"color":"yellow","value":1},{"color":"red","value":5}] } } }
+      "fieldConfig": { "defaults": { "unit": "percent", "noValue": "0", "color": { "mode": "thresholds" }, "thresholds": { "steps": [{"color":"green","value":0},{"color":"yellow","value":1},{"color":"red","value":5}] } } }
     },
     {
       "type": "stat",
@@ -47,11 +47,11 @@
       "gridPos": { "x": 18, "y": 0, "w": 6, "h": 4 },
       "targets": [{
         "datasource": { "uid": "prometheus" },
-        "expr": "sum(kafka_consumergroup_lag * on(consumergroup) group_left() (kafka_consumergroup_members > 0))",
+        "expr": "sum(kafka_consumergroup_lag) or vector(0)",
         "legendFormat": "lag"
       }],
       "options": { "colorMode": "background" },
-      "fieldConfig": { "defaults": { "unit": "short", "color": { "mode": "thresholds" }, "thresholds": { "steps": [{"color":"green","value":0},{"color":"yellow","value":100},{"color":"red","value":1000}] } } }
+      "fieldConfig": { "defaults": { "unit": "short", "noValue": "0", "color": { "mode": "thresholds" }, "thresholds": { "steps": [{"color":"green","value":0},{"color":"yellow","value":100},{"color":"red","value":1000}] } } }
     },
     {
       "type": "timeseries",
@@ -65,11 +65,11 @@
         },
         {
           "datasource": { "uid": "prometheus" },
-          "expr": "sum(rate(http_server_requests_seconds_count{uri=\"/orders\",method=\"POST\",status=~\"4..|5..\"}[30s]))",
+          "expr": "sum(rate(http_server_requests_seconds_count{uri=\"/orders\",method=\"POST\",status=~\"4..|5..\"}[30s])) or vector(0)",
           "legendFormat": "errors"
         }
       ],
-      "fieldConfig": { "defaults": { "unit": "reqps" } }
+      "fieldConfig": { "defaults": { "unit": "reqps", "noValue": "0" } }
     },
     {
       "type": "timeseries",
@@ -82,7 +82,7 @@
           "legendFormat": "{{router}}"
         }
       ],
-      "fieldConfig": { "defaults": { "unit": "reqps" } }
+      "fieldConfig": { "defaults": { "unit": "reqps", "noValue": "0" } }
     },
     {
       "type": "timeseries",
@@ -90,10 +90,10 @@
       "gridPos": { "x": 0, "y": 12, "w": 24, "h": 8 },
       "targets": [{
         "datasource": { "uid": "prometheus" },
-        "expr": "sum(kafka_consumergroup_lag * on(consumergroup) group_left() (kafka_consumergroup_members > 0)) by (consumergroup)",
+        "expr": "sum by (consumergroup) (kafka_consumergroup_lag)",
         "legendFormat": "{{consumergroup}}"
       }],
-      "fieldConfig": { "defaults": { "unit": "short" } }
+      "fieldConfig": { "defaults": { "unit": "short", "noValue": "0" } }
     },
     {
       "type": "logs",
