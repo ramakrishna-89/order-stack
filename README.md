@@ -35,10 +35,10 @@ docker compose -f infra/compose.yml up -d
 # Wait ~30 seconds for all health checks to pass and ensure the infra is up
 
 # Smoke test — 3 iterations via Traefik (auth, order lifecycle, all UI routes)
-cd test && k6 run smoke-test-traefik.js
+k6 run test/smoke-test-traefik.js
 
 # Full load test — ~5,000 orders/min sustained + 250 req/sec burst (direct, bypasses rate limit)
-cd test && k6 run order-load-test.js
+k6 run test/order-load-test.js
 
 ```
 
