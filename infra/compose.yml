@@ -379,6 +379,7 @@ services:
 # ── Landing page (Traefik default — shown at http://localhost:8888) ───────────
   landing:
     image: nginx:alpine
+    platform: linux/arm64
     container_name: stack-landing
     restart: unless-stopped
     labels: { stack: "true" }

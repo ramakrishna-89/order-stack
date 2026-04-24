@@ -4,6 +4,8 @@ infra/containers/redis/data/
 infra/containers/grafana/data/
 infra/containers/prometheus/data/
 infra/containers/tempo/data/
+infra/containers/loki/data/
+infra/containers/kafka/data/
 
 # Environment — copy .env.example → .env to get started
 infra/.env
