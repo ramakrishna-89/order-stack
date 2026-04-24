@@ -80,10 +80,13 @@ resilience4j:
   circuitbreaker:
     instances:
       kafka-publisher:
-        sliding-window-size: 10
+        sliding-window-size: 50
+        minimum-number-of-calls: 20
         failure-rate-threshold: 50
+        slow-call-duration-threshold: 2s
+        slow-call-rate-threshold: 50
         wait-duration-in-open-state: 10s
-        permitted-number-of-calls-in-half-open-state: 3
+        permitted-number-of-calls-in-half-open-state: 5
         register-health-indicator: true
 
 outbox:

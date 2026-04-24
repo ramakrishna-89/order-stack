@@ -11,7 +11,11 @@ import java.util.UUID;
 
 public interface OutboxRepository extends JpaRepository<OutboxEvent, UUID> {
 
-    @Query("SELECT e FROM OutboxEvent e WHERE e.published = false ORDER BY e.createdAt ASC LIMIT :batchSize")
+    // FOR UPDATE SKIP LOCKED: each instance locks its own batch; concurrent instances skip
+    // already-locked rows instead of racing — prevents duplicate Kafka publishes in multi-pod deployments.
+    // Requires the caller to run inside a @Transactional boundary (OutboxPoller.poll() provides this).
+    @Query(value = "SELECT * FROM outbox_events WHERE published = false ORDER BY created_at LIMIT :batchSize FOR UPDATE SKIP LOCKED",
+            nativeQuery = true)
     List<OutboxEvent> findUnpublished(@Param("batchSize") int batchSize);
 
     // Single UPDATE instead of a load-then-save cycle — avoids fetching the full entity

@@ -176,7 +176,7 @@ services:
       redis-server
       --loglevel warning
       --maxmemory 512mb
-      --maxmemory-policy volatile-lru
+      --maxmemory-policy allkeys-lru
       --tcp-backlog 511
       --save ""
       --appendonly no
@@ -251,6 +251,9 @@ services:
         source: ./config/loki/loki-config.yml
         target: /etc/loki/loki-config.yml
         read_only: true
+      - type: bind
+        source: ./containers/loki/data
+        target: /tmp/loki
     networks: [stack-net]
 
   promtail:

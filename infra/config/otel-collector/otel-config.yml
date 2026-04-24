@@ -1,3 +1,5 @@
+file_format: "0.0.1"
+
 receivers:
   otlp:
     protocols:
@@ -12,6 +14,21 @@ processors:
     limit_mib: 256
     spike_limit_mib: 64
 
+  # Tail-based sampling: buffer spans for 10s, then decide based on outcome.
+  # Keeps 100% of error/slow traces; samples 1% of normal traffic.
+  tail_sampling:
+    decision_wait: 10s
+    policies:
+      - name: errors
+        type: status_code
+        status_code: {status_codes: [ERROR]}
+      - name: slow
+        type: latency
+        latency: {threshold_ms: 500}
+      - name: sample
+        type: probabilistic
+        probabilistic: {sampling_percentage: 1}
+
   batch:
     timeout: 1s
     send_batch_size: 1024
@@ -23,11 +40,11 @@ exporters:
     tls:
       insecure: true
   debug:
-    verbosity: normal
+    verbosity: basic
 
 service:
   pipelines:
     traces:
       receivers:  [otlp]
-      processors: [memory_limiter, batch]
+      processors: [memory_limiter, tail_sampling, batch]
       exporters:  [otlp, debug]

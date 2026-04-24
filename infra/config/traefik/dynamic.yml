@@ -69,10 +69,13 @@ http:
       service: dashboard-svc
       priority: 100
 
-    # SSE stream — no auth, proxied through dashboard nginx → notification-service
+    # SSE stream — no auth, proxied through dashboard nginx → notification-service.
+    # sse-no-buffer middleware sets X-Accel-Buffering: no so nginx in the dashboard
+    # container does not buffer the stream — each event reaches the client immediately.
     notifications:
       entryPoints: [web]
       rule: "PathPrefix(`/notifications`)"
+      middlewares: [sse-no-buffer]
       service: dashboard-svc
       priority: 100
 
@@ -90,6 +93,15 @@ http:
       rateLimit:
         average: 100
         burst: 50
+
+    # SSE requires unbuffered streaming — nginx buffers by default.
+    # X-Accel-Buffering: no disables nginx proxy buffering for this response.
+    # Cache-Control: no-cache prevents intermediate proxies from caching the stream.
+    sse-no-buffer:
+      headers:
+        customResponseHeaders:
+          X-Accel-Buffering: "no"
+          Cache-Control: "no-cache"
 
   # ── Services ──────────────────────────────────────────────────────────────────
 

@@ -37,6 +37,7 @@ public class OrderServiceImpl implements OrderService {
     private final ObjectMapper              objectMapper;
     private final OrderMapper               orderMapper;
     private final ApplicationEventPublisher eventPublisher;
+    private final OrderSaveDelegate         orderSaveDelegate;
 
     @Value("${order.cache.ttl-seconds:30}")
     private long cacheTtlSeconds;
@@ -63,8 +64,8 @@ public class OrderServiceImpl implements OrderService {
         }
 
         // Redis miss — check DB before inserting; handles the common case where the key exists in DB
-        // but was evicted from Redis (TTL expired or flush). Avoids poisoning the transaction with
-        // a constraint violation that would abort all subsequent queries in the same tx.
+        // but was evicted from Redis (TTL expired or memory pressure). Avoids exception-driven flow
+        // for this frequent path — the REQUIRES_NEW catch block handles only the true concurrent race.
         var dbExisting = orderRepository.findByIdempotencyKey(idempotencyKey);
         if (dbExisting.isPresent()) {
             eventPublisher.publishEvent(
@@ -80,12 +81,18 @@ public class OrderServiceImpl implements OrderService {
         order.setIdempotencyKey(idempotencyKey);
         order.setStatus(OrderStatus.CREATED);
         try {
-            order = orderRepository.save(order);
+            order = orderSaveDelegate.save(order);
         } catch (DataIntegrityViolationException e) {
-            // True concurrent race: two pods both passed Redis + DB checks simultaneously.
-            // Transaction is now aborted — cannot query DB here. Return 409 so the client retries;
-            // on retry the SELECT above will find the winner's row and return cleanly as duplicate.
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "Concurrent duplicate — please retry");
+            // REQUIRES_NEW rolled back; outer tx still valid — look up the winner and return it
+            // so the client gets HTTP 200 + existing order instead of a 409 requiring a retry.
+            var existing = orderRepository.findByIdempotencyKey(idempotencyKey)
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Race recovery failed"));
+            eventPublisher.publishEvent(
+                    new OrderEvent.DuplicateRejected(idempotencyKey, request.getCustomerId(), Instant.now()));
+            return OrderResult.builder()
+                    .order(orderMapper.toResponse(existing))
+                    .duplicate(true)
+                    .build();
         }
 
         // Serialize once — reused for outbox payload AND both Redis cache entries
